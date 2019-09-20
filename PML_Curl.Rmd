@@ -9,12 +9,14 @@ output: html_document
 Load ALL THE LIBRARIES. You know. Just because.
 
 ```{r}
-'Libraries, I just copy and paste this every time.'
+library(ElemStatLearn)
 library(lubridate) 
 library(AppliedPredictiveModeling)
 library(ElemStatLearn)
 library(randomForest)
 library(caret)
+library(e1071)
+library(forecast)
 ```
 
 ## Step 2
@@ -23,20 +25,32 @@ Read in Data. Can't do any analysis without any data!
 
 ```{r}
 'Read in Training Data'
-training = read.csv("~/Desktop/pml-training.csv")
+training_all = read.csv("~/Desktop/pml-training.csv")
 
 'Read in Testing Data'
-testing = read.csv("~/Desktop/pml-testing.csv")
+testing_final = read.csv("~/Desktop/pml-testing.csv")
 ```
 ## Step 3
+
+Segregate Data! I'm using 70% of my data for training, and 30% to Test.
+
+```{r}
+inTrain <- createDataPartition(y=training_all$classe, p=0.7, list=FALSE)
+
+training <- training_all[inTrain, ]
+
+testing <- training_all[-inTrain, ]
+```
+
+## Step 4
 
 Data Clean-up! Things I tried:
 
 - Removing all rows with NA data via omit.na (not so great, left me with only 406 observations).
 
-- Remove all columns that had mostly NA values, plus the first column which just numbered the rows.
+- Remove all columns that had mostly NA values, plus the first column which just numbered the rows. I wanted to see if using most of the columns would produce a good model.
 
-- Removed all but a couple of the beginning columns (kept 2.username through 11.total_accel_belt, and 157.magnet_forearm_x through 160. classe).
+- Removed all but a couple of the beginning columns (kept 2.username through 11.total_accel_belt, and 157.magnet_forearm_x through 160. classe). Conversely, I wanted to see if I could produce a good model using only a small fraction of the data.
 
 ```{r}
 'Remove all rows with NA values'
@@ -48,7 +62,7 @@ training_reduced <- training[ -c(1,12:36, 50:59, 69:83, 87:101, 103:112, 125:139
 'Remove all columns except for columns 2 through 11 and 157 through 160'
 training_really_reduced <- training[ -c(1, 12:156) ]
 ```
-## Step 3
+## Step 5
 
 Train the models!
 
@@ -67,7 +81,7 @@ modFit2 <- train(classe ~., method = "rf", data = training_reduced)
 modFit3 <- train(classe ~., method = "rf", data = training_really_reduced)
 ```
 
-## Step 4
+## Step 6
 
 Prediction time! I spoiled up above but I'll write it out here too:
 
@@ -80,10 +94,24 @@ Prediction time! I spoiled up above but I'll write it out here too:
 
 ```{r}
 'predict1 <- predict(modFit1, testing)'
-predict2 <- predict(modFit2, testing)
-predict3 <- predict(modFit3, testing)
+predict2 <- predict(modFit2, testing_final)
+predict3 <- predict(modFit3, testing_final)
 
 'predict1'
 print(predict2)
 print(predict3)
+```
+## Step 7
+
+Accuracies and Reasoning
+
+After comparing the accuracies of both models, I've decided that the model utlizing only 14 columns is (marginally) the better one. It has a better accuracy (99.98% vs 99.96%), and it was faster during the learning process, which is also a benefit.
+
+```{r}
+predict4 <- predict(modFit2, testing)
+predict5 <- predict(modFit3, testing)
+
+'Confusion Matrix'
+confusionMatrix(predict4, testing$classe)$overall[1]
+confusionMatrix(predict5, testing$classe)$overall[1]
 ```

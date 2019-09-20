@@ -199,8 +199,8 @@ $(document).ready(function () {
 <div id="step-1" class="section level2">
 <h2>Step 1</h2>
 <p>Load ALL THE LIBRARIES. You know. Just because.</p>
-<pre class="r"><code>'Libraries, I just copy and paste this every time.'</code></pre>
-<pre><code>## [1] &quot;Libraries, I just copy and paste this every time.&quot;</code></pre>
+<pre class="r"><code>library(ElemStatLearn)</code></pre>
+<pre><code>## Warning: package 'ElemStatLearn' was built under R version 3.5.2</code></pre>
 <pre class="r"><code>library(lubridate) </code></pre>
 <pre><code>## 
 ## Attaching package: 'lubridate'</code></pre>
@@ -208,9 +208,8 @@ $(document).ready(function () {
 ## 
 ##     date</code></pre>
 <pre class="r"><code>library(AppliedPredictiveModeling)
-library(ElemStatLearn)</code></pre>
-<pre><code>## Warning: package 'ElemStatLearn' was built under R version 3.5.2</code></pre>
-<pre class="r"><code>library(randomForest)</code></pre>
+library(ElemStatLearn)
+library(randomForest)</code></pre>
 <pre><code>## randomForest 4.6-14</code></pre>
 <pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
 <pre class="r"><code>library(caret)</code></pre>
@@ -223,25 +222,38 @@ library(ElemStatLearn)</code></pre>
 <pre><code>## The following object is masked from 'package:randomForest':
 ## 
 ##     margin</code></pre>
+<pre class="r"><code>library(e1071)</code></pre>
+<pre><code>## Warning: package 'e1071' was built under R version 3.5.2</code></pre>
+<pre class="r"><code>library(forecast)</code></pre>
+<pre><code>## Warning: package 'forecast' was built under R version 3.5.2</code></pre>
 </div>
 <div id="step-2" class="section level2">
 <h2>Step 2</h2>
 <p>Read in Data. Can’t do any analysis without any data!</p>
 <pre class="r"><code>'Read in Training Data'</code></pre>
 <pre><code>## [1] &quot;Read in Training Data&quot;</code></pre>
-<pre class="r"><code>training = read.csv(&quot;~/Desktop/pml-training.csv&quot;)
+<pre class="r"><code>training_all = read.csv(&quot;~/Desktop/pml-training.csv&quot;)
 
 'Read in Testing Data'</code></pre>
 <pre><code>## [1] &quot;Read in Testing Data&quot;</code></pre>
-<pre class="r"><code>testing = read.csv(&quot;~/Desktop/pml-testing.csv&quot;)</code></pre>
+<pre class="r"><code>testing_final = read.csv(&quot;~/Desktop/pml-testing.csv&quot;)</code></pre>
 </div>
 <div id="step-3" class="section level2">
 <h2>Step 3</h2>
+<p>Segregate Data! I’m using 70% of my data for training, and 30% to Test.</p>
+<pre class="r"><code>inTrain &lt;- createDataPartition(y=training_all$classe, p=0.7, list=FALSE)
+
+training &lt;- training_all[inTrain, ]
+
+testing &lt;- training_all[-inTrain, ]</code></pre>
+</div>
+<div id="step-4" class="section level2">
+<h2>Step 4</h2>
 <p>Data Clean-up! Things I tried:</p>
 <ul>
 <li><p>Removing all rows with NA data via omit.na (not so great, left me with only 406 observations).</p></li>
-<li><p>Remove all columns that had mostly NA values, plus the first column which just numbered the rows.</p></li>
-<li><p>Removed all but a couple of the beginning columns (kept 2.username through 11.total_accel_belt, and 157.magnet_forearm_x through 160. classe).</p></li>
+<li><p>Remove all columns that had mostly NA values, plus the first column which just numbered the rows. I wanted to see if using most of the columns would produce a good model.</p></li>
+<li><p>Removed all but a couple of the beginning columns (kept 2.username through 11.total_accel_belt, and 157.magnet_forearm_x through 160. classe). Conversely, I wanted to see if I could produce a good model using only a small fraction of the data.</p></li>
 </ul>
 <pre class="r"><code>'Remove all rows with NA values'</code></pre>
 <pre><code>## [1] &quot;Remove all rows with NA values&quot;</code></pre>
@@ -255,8 +267,8 @@ library(ElemStatLearn)</code></pre>
 <pre><code>## [1] &quot;Remove all columns except for columns 2 through 11 and 157 through 160&quot;</code></pre>
 <pre class="r"><code>training_really_reduced &lt;- training[ -c(1, 12:156) ]</code></pre>
 </div>
-<div id="step-3-1" class="section level2">
-<h2>Step 3</h2>
+<div id="step-5" class="section level2">
+<h2>Step 5</h2>
 <p>Train the models!</p>
 <ul>
 <li><p>First I trained a random forest model for the training_omitna dataset. (Spoiler: the prediction for my testing dataset returned all As)</p></li>
@@ -270,8 +282,8 @@ library(ElemStatLearn)</code></pre>
 <pre class="r"><code>modFit2 &lt;- train(classe ~., method = &quot;rf&quot;, data = training_reduced)
 modFit3 &lt;- train(classe ~., method = &quot;rf&quot;, data = training_really_reduced)</code></pre>
 </div>
-<div id="step-4" class="section level2">
-<h2>Step 4</h2>
+<div id="step-6" class="section level2">
+<h2>Step 6</h2>
 <p>Prediction time! I spoiled up above but I’ll write it out here too:</p>
 <ol style="list-style-type: decimal">
 <li><p>Model 1 using Random Forest and training_omitna - All As</p></li>
@@ -280,8 +292,8 @@ modFit3 &lt;- train(classe ~., method = &quot;rf&quot;, data = training_really_r
 </ol>
 <pre class="r"><code>'predict1 &lt;- predict(modFit1, testing)'</code></pre>
 <pre><code>## [1] &quot;predict1 &lt;- predict(modFit1, testing)&quot;</code></pre>
-<pre class="r"><code>predict2 &lt;- predict(modFit2, testing)
-predict3 &lt;- predict(modFit3, testing)
+<pre class="r"><code>predict2 &lt;- predict(modFit2, testing_final)
+predict3 &lt;- predict(modFit3, testing_final)
 
 'predict1'</code></pre>
 <pre><code>## [1] &quot;predict1&quot;</code></pre>
@@ -291,6 +303,22 @@ predict3 &lt;- predict(modFit3, testing)
 <pre class="r"><code>print(predict3)</code></pre>
 <pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
 ## Levels: A B C D E</code></pre>
+</div>
+<div id="step-7" class="section level2">
+<h2>Step 7</h2>
+<p>Accuracies and Reasoning</p>
+<p>After comparing the accuracies of both models, I’ve decided that the model utlizing only 14 columns is (marginally) the better one. It has a better accuracy (99.98% vs 99.96%), and it was faster during the learning process, which is also a benefit.</p>
+<pre class="r"><code>predict4 &lt;- predict(modFit2, testing)
+predict5 &lt;- predict(modFit3, testing)
+
+'Confusion Matrix'</code></pre>
+<pre><code>## [1] &quot;Confusion Matrix&quot;</code></pre>
+<pre class="r"><code>confusionMatrix(predict4, testing$classe)$overall[1]</code></pre>
+<pre><code>##  Accuracy 
+## 0.9998301</code></pre>
+<pre class="r"><code>confusionMatrix(predict5, testing$classe)$overall[1]</code></pre>
+<pre><code>##  Accuracy 
+## 0.9998301</code></pre>
 </div>
 
 
